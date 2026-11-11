@@ -2,6 +2,7 @@
 import { useEffect, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import {PushToggle} from "./push-toggle";
 import { ThemeToggle } from "./theme-toggle";
 import { format, formatDistanceToNow, isSameDay, endOfWeek } from "date-fns";
 import {
@@ -101,10 +102,10 @@ export function FilterSelect({
 }
 export function Planner({
   data,
-  admin = false,
+  admin = false, children,
 }: {
   data: AppData;
-  admin?: boolean;
+  admin?: boolean; children?: React.ReactNode;
 }) {
   const router = useRouter();
   const [mobilePane, setMobilePane] = useState<"overview" | "tasks">("tasks");
@@ -125,7 +126,8 @@ export function Planner({
     setSidebarCollapsed(localStorage.getItem("panic-sidebar") === "collapsed");
     const view = new URLSearchParams(window.location.search).get("view");
     if (view === "overview") setMobilePane("overview");
-    if (view === "groups") {
+    if(view==="personal" || view==="batch") setScope(view);
+    if (view === "groups" || view==="group") {
       setMobilePane("tasks");
       setScope("group");
     }
@@ -261,9 +263,10 @@ export function Planner({
       <Sidebar
         data={data}
         admin={admin}
-        scope={scope}
+        scope={children ? "contributions" : scope}
         collapsed={sidebarCollapsed}
         onScope={(s) => {
+          if(children){router.push("/?view="+s);return;}
           setScope(s);
           setMobilePane("tasks");
         }}
@@ -285,13 +288,13 @@ export function Planner({
             >
               {sidebarCollapsed ? <PanelLeftOpen /> : <PanelLeftClose />}
             </Button>
-            {admin ? "Batch control" : "Your daily plan"}
+            {children ? "Group workspace" : admin ? "Batch control" : "Your daily plan"}
             <span className="text-muted-foreground font-normal ml-3">
               {now ? format(now, "EEEE, MMMM d") : ""}
             </span>
           </span>
-          <nav className="hidden md:flex lg:hidden gap-2">
-            <Button variant={!admin ? "secondary" : "ghost"} asChild>
+          <nav className="hidden md:flex lg:hidden gap-2"><Button asChild variant={children?"secondary":"ghost"}><Link href="/contributions">Contributions</Link></Button>
+            <Button variant={!children && !admin ? "secondary" : "ghost"} asChild>
               <Link href="/">
                 <LayoutDashboard className="size-4" />
                 My Panic
@@ -307,7 +310,7 @@ export function Planner({
             )}
           </nav>
           <div className="flex items-center gap-2">
-            <ThemeToggle />
+            <PushToggle/><ThemeToggle />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="px-1" aria-label="User menu">
@@ -346,6 +349,7 @@ export function Planner({
         </div>
       </header>
       <main className="planner-main max-w-6xl mx-auto px-5 md:px-8 py-8">
+        {children ?? <>
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6 mb-8">
           <div>
             <p className="eyebrow">
@@ -734,6 +738,7 @@ export function Planner({
             </p>
           </>
         )}
+        </>}
       </main>
       <nav
         aria-label="Mobile sections"
@@ -741,9 +746,9 @@ export function Planner({
       >
         <Button
           className="mobile-section-button"
-          variant={!admin && mobilePane === "overview" ? "secondary" : "ghost"}
+          variant={!children && !admin && mobilePane === "overview" ? "secondary" : "ghost"}
           onClick={() => {
-            if (admin) router.push("/?view=overview");
+            if (admin || children) router.push("/?view=overview");
             else setMobilePane("overview");
           }}
         >
@@ -753,12 +758,12 @@ export function Planner({
         <Button
           className="mobile-section-button"
           variant={
-            !admin && mobilePane === "tasks" && scope !== "group"
+            !children && !admin && mobilePane === "tasks" && scope !== "group"
               ? "secondary"
               : "ghost"
           }
           onClick={() => {
-            if (admin) router.push("/");
+            if (admin || children) router.push("/");
             else {
               setMobilePane("tasks");
               setScope("all");
@@ -771,12 +776,12 @@ export function Planner({
         <Button
           className="mobile-section-button"
           variant={
-            !admin && mobilePane === "tasks" && scope === "group"
+            !children && !admin && mobilePane === "tasks" && scope === "group"
               ? "secondary"
               : "ghost"
           }
           onClick={() => {
-            if (admin) router.push("/?view=groups");
+            if (admin || children) router.push("/?view=groups");
             else {
               setMobilePane("tasks");
               setScope("group");
@@ -786,6 +791,7 @@ export function Planner({
           <Users />
           <span>My Groups</span>
         </Button>
+        <Button asChild className="mobile-section-button" variant={children?"secondary":"ghost"}><Link href="/contributions" aria-label="Contributions"><ListTodo/><span>Work log</span></Link></Button>
         {data.user.role === "super_admin" && (
           <Button
             className="mobile-section-button"

@@ -4,6 +4,7 @@ import "@fontsource-variable/geist";
 import "./globals.css";
 
 export const metadata: Metadata = {
+  manifest: "/manifest.webmanifest",
   title: "Panic Planner — A little less last-minute",
   description:
     "Your university batch’s calm corner of organized chaos. Track personal, group and batch deadlines.",
@@ -18,3 +19,4 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     </html>
   );
 }
+

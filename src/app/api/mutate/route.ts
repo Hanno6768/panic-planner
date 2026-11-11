@@ -10,7 +10,9 @@ import {
   groups,
   groupMembers,
   taskCompletions,
+  subjects,
 } from "@/lib/db/schema";
+import {notify,type Notice} from "@/lib/push";
 import { visible } from "@/lib/data";
 import { mutation } from "@/lib/validation";
 import { sameOrigin, failure } from "@/lib/http";
@@ -21,6 +23,7 @@ export async function POST(req: NextRequest) {
     const user = await currentUser();
     if (!user) throw new Error("Please log in.");
     const database = db();
+    let notice:Notice|undefined;
     await database.transaction(async (tx) => {
       if (input.action === "createTask") {
         const [membership] = await tx
@@ -43,6 +46,8 @@ export async function POST(req: NextRequest) {
             createdBy: user.id,
             groupId: input.data.scope === "group" ? membership.groupId : null,
           });
+        const [subject]=await tx.select({name:subjects.name}).from(subjects).where(eq(subjects.id,input.data.subjectId));
+        notice={title:input.data.title,body:[subject.name,input.data.scope,input.data.priority+" priority",user.displayName].join(" · "),dueAt:new Date(input.data.dueAt).toISOString(),url:"/",personalId:input.data.scope==="personal"?user.id:undefined,groupId:input.data.scope==="group"?membership.groupId:undefined};
         return;
       }
       if (
@@ -197,6 +202,7 @@ export async function POST(req: NextRequest) {
             );
       }
     });
+    if(notice) await notify(notice);
     return NextResponse.json({ ok: true });
   } catch (error) {
     return failure(error);

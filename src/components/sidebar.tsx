@@ -109,6 +109,7 @@ export function Sidebar({
               </Link>
             </Button>
           )}
+        <Button asChild variant={scope==="contributions"?"secondary":"ghost"} className="w-full justify-start"><Link href="/contributions" aria-label="Contributions"><BookOpen/><span className="sidebar-label">Contributions</span></Link></Button>
         </nav>
         <div className="sidebar-label mt-9">
           <p className="eyebrow mb-4 px-3">This semester</p>

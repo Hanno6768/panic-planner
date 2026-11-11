@@ -154,15 +154,7 @@ export function AuthForm({
                     ? copy.ui.signupAction
                     : copy.ui.loginAction}
               </Button>
-              <p className="text-sm text-center text-muted-foreground">
-                {signup ? "Already part of the batch?" : "New to the batch?"}{" "}
-                <Link
-                  className="text-primary underline underline-offset-4"
-                  href={signup ? "/login" : "/sign-up"}
-                >
-                  {signup ? "Log in" : "Sign up"}
-                </Link>
-              </p>
+              <p className="text-sm text-center text-muted-foreground">Need access? Contact your batch admin.</p>
             </form>
           </CardContent>
         </Card>

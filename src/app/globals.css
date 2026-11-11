@@ -621,3 +621,26 @@ button,
     margin-bottom: 24px;
   }
 }
+
+.log-panel { background:var(--card); color:var(--card-foreground); border:1px solid var(--border); border-top:4px solid #927ab4; border-radius:1.25rem; padding:clamp(1rem,3vw,1.6rem); display:grid; align-content:start; gap:1rem; min-width:0; box-shadow:0 4px 16px #00000009; }
+.log-panel.roadmap {border-top-color:#579687}
+.log-panel.comment {border-top-color:#d39b56}
+.log-panel h2 {display:flex;align-items:center;gap:.65rem}
+.log-icon,.log-role {background:#eee5f8;color:#523967;border-radius:.65rem;padding:.35rem}
+.log-icon {width:2rem;height:2rem;flex-shrink:0}
+.roadmap .log-icon {background:#deeee5;color:#305847}
+.comment .log-icon {background:#f9ebd3;color:#70511e}
+.log-role {display:inline-block;font-size:.8rem;padding:.2rem .55rem}
+.log-panel table {table-layout:fixed;overflow-wrap:anywhere}
+.log-panel th {background:var(--muted);font-weight:600}
+.log-panel th:last-child {width:38%}
+.log-panel td,.log-panel th {padding:.8rem}
+.log-panel summary {cursor:pointer;font-weight:600;padding:.55rem;border-radius:.5rem;background:var(--muted);color:var(--foreground)}
+.log-panel td details {margin-top:.6rem}
+@media(max-width:767px){
+.log-panel thead {position:absolute;clip-path:inset(50%);width:1px;height:1px;overflow:hidden}
+.log-panel table,.log-panel tbody,.log-panel tr,.log-panel td {display:block;width:100%}
+.log-panel tr {border:1px solid var(--border);border-radius:.8rem;margin-bottom:.6rem;padding:.5rem}
+.log-panel td {padding:.35rem .5rem}
+.log-panel td::before {content:attr(data-label);display:block;color:var(--muted-foreground);font-size:.75rem;font-weight:500}
+}

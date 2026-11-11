@@ -147,3 +147,21 @@ export const taskCompletions = pgTable(
     index("completions_user").on(t.completedBy),
   ],
 );
+
+export const groupNotes = pgTable("group_notes", {
+  id: uuid().defaultRandom().primaryKey(),
+  groupId: uuid("group_id").notNull().references(() => groups.id, {onDelete:"cascade"}),
+  authorId: uuid("author_id").notNull().references(() => users.id, {onDelete:"cascade"}),
+  assignment: text().notNull(),
+  role: text().notNull(),
+  body: text().notNull(),
+  kind: text().notNull(),
+  createdAt: time("created_at").notNull().defaultNow(),
+}, t => [index("group_notes_group").on(t.groupId,t.createdAt)]);
+
+export const pushDevices = pgTable("push_devices", {
+  endpoint: text().primaryKey(),
+  sessionHash: text("session_hash").notNull().references(() => sessions.tokenHash, {onDelete:"cascade"}),
+  p256dh: text().notNull(),
+  auth: text().notNull(),
+});

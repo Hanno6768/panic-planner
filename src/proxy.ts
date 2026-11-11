@@ -7,6 +7,8 @@ export function proxy(request: NextRequest) {
     "/api/auth",
     "/panic-planner-logo.png",
     "/icon.png",
+    "/planner-sw.js",
+    "/manifest.webmanifest",
   ].includes(path);
   if (!publicPath && !request.cookies.get("panic_session")?.value) {
     if (path.startsWith("/api/"))
