@@ -6,7 +6,7 @@ import {Deadline} from "./deadline";
 import {TaskChecklist} from "./task-checklist";
 import {PushToggle} from "./push-toggle";
 import { ThemeToggle } from "./theme-toggle";
-import { format, formatDistanceToNow, isSameDay, endOfWeek } from "date-fns";
+import { format, isSameDay, endOfWeek } from "date-fns";
 import {
   Plus,
   PanelLeftClose,
@@ -618,7 +618,7 @@ export function Planner({
                           >
                             {task.title}
                           </h3>
-                          <Deadline dueAt={task.dueAt} zone={task.dueTimezone}/><TaskChecklist task={task}/>{task.description && (
+                          <TaskChecklist task={task}/>{task.description && (
                             <p className="text-sm text-muted-foreground whitespace-pre-wrap mt-1 break-words">
                               {task.description}
                             </p>
@@ -632,9 +632,7 @@ export function Planner({
                               }
                             >
                               <Clock3 className="inline size-3 mr-1" />
-                              {now
-                                ? `${format(new Date(task.dueAt), "MMM d, h:mm a")} · ${formatDistanceToNow(new Date(task.dueAt), { addSuffix: true })}`
-                                : "Loading local time…"}
+                              <Deadline dueAt={task.dueAt} />
                             </span>
                             <span className="capitalize">
                               {task.priority} priority
