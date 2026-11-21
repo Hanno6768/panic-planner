@@ -53,7 +53,7 @@ export function AdminPanel({
   const router = useRouter();
   const [pending, start] = useTransition();
   const [search, setSearch] = useState("");
-  const [subject, setSubject] = useState(data.subjects[0]?.id ?? "");
+  const [subject, setSubject] = useState(data.currentSubjectIds[0] ?? "");
   const [taskSubject, setTaskSubject] = useState("all");
   const [taskScope, setTaskScope] = useState("all");
   const [modal, setModal] = useState<Modal | null>(null);
@@ -205,7 +205,7 @@ export function AdminPanel({
               label="Group subject"
               value={subject}
               onChange={setSubject}
-              options={data.subjects.map((s) => ({
+              options={data.subjects.filter(s=>data.currentSubjectIds.includes(s.id)).map((s) => ({
                 value: s.id,
                 label: s.name,
               }))}
@@ -583,3 +583,4 @@ function LocalDate({ value }: { value: Date }) {
   useEffect(() => setLabel(new Date(value).toLocaleString()), [value]);
   return <span>{label}</span>;
 }
+

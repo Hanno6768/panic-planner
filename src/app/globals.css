@@ -644,3 +644,27 @@ button,
 .log-panel td {padding:.35rem .5rem}
 .log-panel td::before {content:attr(data-label);display:block;color:var(--muted-foreground);font-size:.75rem;font-weight:500}
 }
+
+.subject-rose { background-color: #ffe4e6; color: #881337; }
+.dark .subject-rose { background-color: #881337; color: #ffe4e6; }
+
+.subject-teal { background-color: #ccfbf1; color: #134e4a; }
+.dark .subject-teal { background-color: #134e4a; color: #ccfbf1; }
+
+.subject-indigo { background-color: #e0e7ff; color: #312e81; }
+.dark .subject-indigo { background-color: #312e81; color: #e0e7ff; }
+
+.subject-orange { background-color: #ffedd5; color: #7c2d12; }
+.dark .subject-orange { background-color: #7c2d12; color: #ffedd5; }
+
+.subject-cyan { background-color: #cffafe; color: #164e63; }
+.dark .subject-cyan { background-color: #164e63; color: #cffafe; }
+
+.subject-pink { background-color: #fce7f3; color: #831843; }
+.dark .subject-pink { background-color: #831843; color: #fce7f3; }
+
+.subject-lime { background-color: #ecfccb; color: #365314; }
+.dark .subject-lime { background-color: #365314; color: #ecfccb; }
+
+.subject-slate { background-color: #e2e8f0; color: #1e293b; }
+.dark .subject-slate { background-color: #1e293b; color: #e2e8f0; }

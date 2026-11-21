@@ -5,6 +5,7 @@ export function proxy(request: NextRequest) {
     "/login",
     "/sign-up",
     "/api/auth",
+    "/api/reminders",
     "/panic-planner-logo.png",
     "/icon.png",
     "/planner-sw.js",

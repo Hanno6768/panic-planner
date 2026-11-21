@@ -2,6 +2,8 @@
 import { useEffect, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import {Deadline} from "./deadline";
+import {TaskChecklist} from "./task-checklist";
 import {PushToggle} from "./push-toggle";
 import { ThemeToggle } from "./theme-toggle";
 import { format, formatDistanceToNow, isSameDay, endOfWeek } from "date-fns";
@@ -288,7 +290,7 @@ export function Planner({
             >
               {sidebarCollapsed ? <PanelLeftOpen /> : <PanelLeftClose />}
             </Button>
-            {children ? "Group workspace" : admin ? "Batch control" : "Your daily plan"}
+            {children ? "Group workspace" : admin ? "Batch control" : data.semester.name+" · Your daily plan"}
             <span className="text-muted-foreground font-normal ml-3">
               {now ? format(now, "EEEE, MMMM d") : ""}
             </span>
@@ -324,7 +326,7 @@ export function Planner({
                   </span>
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
+              <DropdownMenuContent align="end"><DropdownMenuItem asChild className="lg:hidden"><Link href="/history">Task history</Link></DropdownMenuItem>
                 <DropdownMenuItem
                   onClick={async () => {
                     try {
@@ -355,7 +357,7 @@ export function Planner({
             <p className="eyebrow">
               {admin
                 ? copy.ui.adminEyebrow
-                : copy.ui.dashboardEyebrow}
+                : data.semester.name}
             </p>
             <h1 className="text-3xl md:text-[2.6rem] font-semibold tracking-[-.045em] mt-3 leading-tight">
               {admin ? (
@@ -381,7 +383,7 @@ export function Planner({
           </Button>
         </div>
         {admin ? (
-          <AdminPanel data={data} onEdit={setEditor} onDelete={setDeleting} />
+          <><Button asChild variant="outline" className="mb-4"><Link href="/admin/contributions">Browse all group contributions</Link></Button><Button asChild variant="outline" className="mb-4 ml-2"><Link href="/admin/settings">Semester settings</Link></Button><AdminPanel data={data} onEdit={setEditor} onDelete={setDeleting} /></>
         ) : (
           <>
             <section
@@ -580,7 +582,7 @@ export function Planner({
                         <Checkbox
                           aria-label={`Mark ${task.title} ${task.done ? "undone" : "done"}`}
                           checked={task.done}
-                          disabled={busy.has(task.id) || pending}
+                          disabled={busy.has(task.id)}
                           onCheckedChange={() => toggle(task)}
                           className="mt-2 size-5"
                         />
@@ -616,7 +618,7 @@ export function Planner({
                           >
                             {task.title}
                           </h3>
-                          {task.description && (
+                          <Deadline dueAt={task.dueAt} zone={task.dueTimezone}/><TaskChecklist task={task}/>{task.description && (
                             <p className="text-sm text-muted-foreground whitespace-pre-wrap mt-1 break-words">
                               {task.description}
                             </p>
@@ -821,7 +823,7 @@ export function Planner({
             <AlertDialogTitle>Delete this task?</AlertDialogTitle>
             <AlertDialogDescription>
               “{deleting?.title}” and its completion records will be permanently
-              deleted for everyone who can see it.
+              moved to History for everyone who can see it. You can restore it there.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

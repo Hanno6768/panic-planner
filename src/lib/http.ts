@@ -12,6 +12,7 @@ export function failure(error: unknown) {
     );
   const message = error instanceof Error ? error.message : "";
   const safe = [
+    "Choose a subject in the current semester.", "Task is archived.", "Subtask not found.", "Invalid checklist.",
     "Please log in.",
     "Not allowed.",
     "Task not found.",

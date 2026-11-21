@@ -6,6 +6,7 @@ import {
   text,
   timestamp,
   integer,
+  boolean,
   primaryKey,
   unique,
   uniqueIndex,
@@ -55,17 +56,33 @@ export const authAttempts = pgTable("auth_attempts", {
   count: integer().notNull().default(0),
   expiresAt: time("expires_at").notNull(),
 });
+export const semesters = pgTable("semesters", {
+  id: uuid().defaultRandom().primaryKey(),
+  name: text().notNull().unique(),
+  createdAt: time("created_at").notNull().defaultNow(),
+});
+export const plannerSettings = pgTable("planner_settings", {
+  id: integer().primaryKey().default(1),
+  currentSemesterId: uuid("current_semester_id").notNull().references(() => semesters.id),
+});
 export const subjects = pgTable("subjects", {
   id: uuid().defaultRandom().primaryKey(),
   name: text().notNull().unique(),
   color: text().notNull(),
   createdAt: time("created_at").notNull().defaultNow(),
 });
+
+export const semesterSubjects = pgTable("semester_subjects", {
+  semesterId: uuid("semester_id").notNull().references(() => semesters.id),
+  subjectId: uuid("subject_id").notNull().references(() => subjects.id),
+}, t => [primaryKey({columns:[t.semesterId,t.subjectId]})]);
+
 export const groups = pgTable(
   "groups",
   {
     id: uuid().defaultRandom().primaryKey(),
     name: text().notNull(),
+    semesterId: uuid("semester_id").notNull().default("00000000-0000-4000-8000-000000000001").references(()=>semesters.id),
     subjectId: uuid("subject_id")
       .notNull()
       .references(() => subjects.id),
@@ -73,7 +90,7 @@ export const groups = pgTable(
   },
   (t) => [
     unique("group_subject_pair").on(t.id, t.subjectId),
-    unique("group_subject_name").on(t.subjectId, t.name),
+    unique("group_subject_name").on(t.semesterId,t.subjectId, t.name),
   ],
 );
 export const groupMembers = pgTable(
@@ -83,11 +100,12 @@ export const groupMembers = pgTable(
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
     groupId: uuid("group_id").notNull(),
+    semesterId: uuid("semester_id").notNull().default("00000000-0000-4000-8000-000000000001").references(()=>semesters.id),
     subjectId: uuid("subject_id").notNull(),
     createdAt: time("created_at").notNull().defaultNow(),
   },
   (t) => [
-    primaryKey({ columns: [t.userId, t.subjectId] }),
+    primaryKey({ columns: [t.userId, t.subjectId,t.semesterId] }),
     foreignKey({
       columns: [t.groupId, t.subjectId],
       foreignColumns: [groups.id, groups.subjectId],
@@ -107,6 +125,10 @@ export const tasks = pgTable(
     scope: scope().notNull(),
     groupId: uuid("group_id"),
     dueAt: time("due_at").notNull(),
+    dueTimezone: text("due_timezone"),
+    deletedAt: time("deleted_at"),
+    deletedBy: uuid("deleted_by").references(() => users.id, {onDelete:"set null"}),
+    semesterId: uuid("semester_id").references(() => semesters.id),
     priority: priority().notNull().default("medium"),
     createdBy: uuid("created_by").references(() => users.id, {
       onDelete: "set null",
@@ -165,3 +187,28 @@ export const pushDevices = pgTable("push_devices", {
   p256dh: text().notNull(),
   auth: text().notNull(),
 });
+
+export const subtasks = pgTable("subtasks", {
+  id: uuid().defaultRandom().primaryKey(),
+  taskId: uuid("task_id").notNull().references(() => tasks.id,{onDelete:"cascade"}),
+  title: text().notNull(),
+  position: integer().notNull(),
+}, t => [index("subtasks_task").on(t.taskId)]);
+export const subtaskCompletions = pgTable("subtask_completions", {
+  subtaskId: uuid("subtask_id").notNull().references(() => subtasks.id,{onDelete:"cascade"}),
+  slot: text().notNull(),
+  completedBy: uuid("completed_by").references(() => users.id,{onDelete:"set null"}),
+}, t => [primaryKey({columns:[t.subtaskId,t.slot]})]);
+export const taskEvents = pgTable("task_events", {
+  id: uuid().defaultRandom().primaryKey(),
+  taskId: uuid("task_id").notNull().references(() => tasks.id,{onDelete:"cascade"}),
+  actorId: uuid("actor_id").references(() => users.id,{onDelete:"set null"}),
+  action: text().notNull(),
+  createdAt: time("created_at").notNull().defaultNow(),
+}, t => [index("task_events_task").on(t.taskId,t.createdAt)]);
+export const reminderDeliveries = pgTable("reminder_deliveries", {
+  taskId: uuid("task_id").notNull().references(() => tasks.id,{onDelete:"cascade"}),
+  userId: uuid("user_id").notNull().references(() => users.id,{onDelete:"cascade"}),
+  dueAt: time("due_at").notNull(),
+  createdAt: time("created_at").notNull().defaultNow(),
+}, t => [primaryKey({columns:[t.taskId,t.userId,t.dueAt]})]);

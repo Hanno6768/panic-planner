@@ -2,7 +2,7 @@
 import { copy } from "@/lib/copy";
 import Link from "next/link";
 import {
-  BookOpen,
+  BookOpen, History,
   Check,
   LayoutDashboard,
   LogOut,
@@ -110,10 +110,10 @@ export function Sidebar({
             </Button>
           )}
         <Button asChild variant={scope==="contributions"?"secondary":"ghost"} className="w-full justify-start"><Link href="/contributions" aria-label="Contributions"><BookOpen/><span className="sidebar-label">Contributions</span></Link></Button>
-        </nav>
+        <Button asChild variant="ghost" className="w-full justify-start"><Link href="/history" aria-label="History"><History/><span className="sidebar-label">History</span></Link></Button></nav>
         <div className="sidebar-label mt-9">
-          <p className="eyebrow mb-4 px-3">This semester</p>
-          {data.subjects.map((s) => (
+          <p className="eyebrow mb-4 px-3">{data.semester.name}</p>
+          {data.subjects.filter(s=>data.currentSubjectIds.includes(s.id)).map((s) => (
             <div className="flex items-start gap-2.5 px-3 py-2.5" key={s.id}>
               <span
                 className={`subject-${s.color} mt-1 size-2 rounded-sm shrink-0`}

@@ -25,12 +25,18 @@ export const taskInput = z.object({
   subjectId: z.uuid(),
   scope: z.enum(["personal", "group", "batch"]),
   dueAt: z.iso.datetime({ offset: true }),
+  dueTimezone: z.string().max(80).refine(value => {
+    try { new Intl.DateTimeFormat("en",{timeZone:value}); return true; } catch { return false; }
+  }, "Choose a valid timezone.").optional(),
+  subtasks: z.array(z.object({id:z.uuid().optional(),title:z.string().trim().min(1).max(180)})).max(30).optional(),
   priority: z.enum(["low", "medium", "high"]).default("medium"),
 });
 export const mutation = z.discriminatedUnion("action", [
   z.object({ action: z.literal("createTask"), data: taskInput }),
   z.object({ action: z.literal("editTask"), id: z.uuid(), data: taskInput }),
   z.object({ action: z.literal("deleteTask"), id: z.uuid() }),
+  z.object({action:z.literal("restoreTask"),id:z.uuid()}),
+  z.object({action:z.literal("completeSubtask"),id:z.uuid(),subtaskId:z.uuid(),done:z.boolean()}),
   z.object({ action: z.literal("complete"), id: z.uuid(), done: z.boolean() }),
   z.object({
     action: z.literal("addUser"),

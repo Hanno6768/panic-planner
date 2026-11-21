@@ -19,15 +19,19 @@ export type Notice={title:string;body:string;url:string;dueAt?:string;groupId?:s
 export async function notify({groupId,personalId,...message}:Notice){
   try {
     const vapid=keys();
-    if(!vapid) return;
+    if(!vapid) return {sent:0,failed:0};
     const recipients=groupId ? inArray(sessions.userId,db().select({id:groupMembers.userId}).from(groupMembers).where(eq(groupMembers.groupId,groupId))) : personalId ? eq(sessions.userId,personalId) : undefined;
     const devices=await db().select({device:pushDevices}).from(pushDevices).innerJoin(sessions,eq(sessions.tokenHash,pushDevices.sessionHash)).where(and(gt(sessions.expiresAt,new Date()),recipients));
+    let sent=0,failed=0;
     await Promise.allSettled(devices.map(async ({device})=>{
       try{
         await sendNotification({endpoint:device.endpoint,keys:{auth:device.auth,p256dh:device.p256dh}},JSON.stringify(message),{TTL:3600,timeout:5000,vapidDetails:{...vapid,subject:process.env.VAPID_SUBJECT || "mailto:admin@example.com"}});
+        sent++;
       }catch(error){
+        failed++;
         if([404,410].includes((error as {statusCode:number}).statusCode)) await db().delete(pushDevices).where(eq(pushDevices.endpoint,device.endpoint));
       }
     }));
-  }catch{console.error("Could not deliver planner notification");}
+    return {sent,failed};
+  }catch{console.error("Could not deliver planner notification");return {sent:0,failed:1};}
 }

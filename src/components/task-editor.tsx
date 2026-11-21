@@ -4,7 +4,8 @@ import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { format } from "date-fns";
+import {wallTime,utcFromWall} from "@/lib/timezone";
+import {Plus,Trash2} from "lucide-react";
 import { toast } from "sonner";
 import type { AppData } from "@/lib/data";
 import { copy } from "@/lib/copy";
@@ -52,15 +53,18 @@ export function TaskEditor({
 }) {
   const router = useRouter();
   const [error, setError] = useState("");
+  const browserZone=Intl.DateTimeFormat().resolvedOptions().timeZone;
+  const [zone,setZone]=useState(task?.dueTimezone || browserZone);
+  const [checklist,setChecklist]=useState<{id?:string;title:string}[]>(task?.subtasks.map(item=>({id:item.id,title:item.title})) || []);
   const form = useForm<z.infer<typeof schema>>({
     resolver: zodResolver(schema),
     defaultValues: {
       title: task?.title ?? "",
       description: task?.description ?? "",
-      subjectId: task?.subjectId ?? data.subjects[0]?.id ?? "",
+      subjectId: task?.subjectId ?? data.currentSubjectIds[0] ?? "",
       scope: task?.scope ?? "personal",
       priority: task?.priority ?? "medium",
-      dueAt: task ? format(new Date(task.dueAt), "yyyy-MM-dd'T'HH:mm") : "",
+      dueAt: task ? wallTime(task.dueAt,zone) : "",
     },
   });
   const group = data.memberships.find(
@@ -91,7 +95,9 @@ export function TaskEditor({
                   ...(task ? { id: task.id } : {}),
                   data: {
                     ...values,
-                    dueAt: new Date(values.dueAt).toISOString(),
+                    dueAt: utcFromWall(values.dueAt,zone),
+                    dueTimezone:zone,
+                    subtasks:checklist,
                   },
                 });
                 toast.success(copy.saved);
@@ -158,7 +164,7 @@ export function TaskEditor({
                         field.onChange(v);
                         form.setValue("scope", "personal");
                       }}
-                      options={data.subjects.map((s) => ({
+                      options={data.subjects.filter(s=>task || data.currentSubjectIds.includes(s.id)).map((s) => ({
                         value: s.id,
                         label: s.name,
                       }))}
@@ -234,6 +240,8 @@ export function TaskEditor({
                 )}
               />
             </div>
+            <div className="space-y-2"><label className="text-sm font-medium">Deadline timezone</label><FilterSelect label="Deadline timezone" value={zone} onChange={setZone} options={[...new Set([zone,browserZone,"Africa/Cairo","Asia/Riyadh","Asia/Kuwait","Asia/Kuala_Lumpur","UTC"])].map(value=>({value,label:value}))}/><p className="text-xs text-muted-foreground">Enter the assignment deadline in this timezone. Everyone sees this reference time alongside their own local time.</p></div>
+            <fieldset className="space-y-3"><legend className="text-sm font-medium mb-2">Checklist (optional)</legend>{checklist.map((item,index)=><div className="flex gap-2" key={item.id || index}><Input aria-label={"Subtask "+(index+1)} value={item.title} maxLength={180} onChange={event=>setChecklist(checklist.map((row,i)=>i===index?{...row,title:event.target.value}:row))}/><Button type="button" size="icon" variant="ghost" aria-label={"Remove subtask "+(index+1)} onClick={()=>setChecklist(checklist.filter((_,i)=>i!==index))}><Trash2/></Button></div>)}<Button type="button" variant="outline" disabled={checklist.length>=30} onClick={()=>setChecklist([...checklist,{title:""}])}><Plus/>Add subtask</Button></fieldset>
             {error && (
               <p role="alert" className="text-sm text-destructive">
                 {error}

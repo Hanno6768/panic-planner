@@ -1,7 +1,7 @@
 import "dotenv/config";
 import postgres from "postgres";
 import { drizzle } from "drizzle-orm/postgres-js";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { subjects, users } from "../src/lib/db/schema";
@@ -31,6 +31,7 @@ async function main() {
           { name: "Digital Communication and Collaboration", color: "green" },
         ])
         .onConflictDoNothing();
+      await tx.execute(sql`insert into semester_subjects (semester_id,subject_id) select '00000000-0000-4000-8000-000000000001',id from subjects on conflict do nothing`);
       const existing = await tx
         .select()
         .from(users)

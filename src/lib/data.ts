@@ -1,5 +1,5 @@
 import "server-only";
-import { eq, inArray, sql } from "drizzle-orm";
+import { and, eq, inArray, sql, isNull } from "drizzle-orm";
 import { db } from "./db";
 import {
   users,
@@ -7,19 +7,20 @@ import {
   groups,
   groupMembers,
   tasks,
-  taskCompletions,
+  taskCompletions, subtasks, subtaskCompletions, semesters, plannerSettings, semesterSubjects,
 } from "./db/schema";
 export type User = typeof users.$inferSelect;
 export { visible } from "./permissions";
 import { visible } from "./permissions";
-export async function loadData(user: User, admin = false) {
+export async function loadData(user: User, admin = false, history = false) {
   if (admin && user.role !== "super_admin") throw new Error("Not allowed.");
   const database = db();
+  const [settings]=await database.select({id:semesters.id,name:semesters.name}).from(plannerSettings).innerJoin(semesters,eq(semesters.id,plannerSettings.currentSemesterId)).where(eq(plannerSettings.id,1));
   const taskRows = await database
     .select({ task: tasks, creator: users.displayName })
     .from(tasks)
     .leftJoin(users, eq(users.id, tasks.createdBy))
-    .where(visible(user))
+    .where(and(visible(user),history?undefined:isNull(tasks.deletedAt),history?undefined:eq(tasks.semesterId,settings.id)))
     .orderBy(tasks.dueAt);
   const ids = taskRows.map((r) => r.task.id);
   const completions = ids.length
@@ -36,6 +37,8 @@ export async function loadData(user: User, admin = false) {
         .leftJoin(users, eq(users.id, taskCompletions.completedBy))
         .where(inArray(taskCompletions.taskId, ids))
     : [];
+  const checklist=ids.length?await database.select().from(subtasks).where(inArray(subtasks.taskId,ids)).orderBy(subtasks.position):[];
+  const checklistDone=checklist.length?await database.select().from(subtaskCompletions).where(inArray(subtaskCompletions.subtaskId,checklist.map(item=>item.id))):[];
   const [count] = await database
     .select({ total: sql<number>`count(*)::int` })
     .from(users)
@@ -43,8 +46,9 @@ export async function loadData(user: User, admin = false) {
   const memberships = await database
     .select()
     .from(groupMembers)
-    .where(admin ? sql`true` : eq(groupMembers.userId, user.id));
+    .where(and(eq(groupMembers.semesterId,settings.id),admin ? undefined : eq(groupMembers.userId,user.id)));
   return {
+    semester:settings,
     user: {
       id: user.id,
       displayName: user.displayName,
@@ -52,12 +56,13 @@ export async function loadData(user: User, admin = false) {
       role: user.role,
     },
     subjects: await database.select().from(subjects),
+    currentSubjectIds: (await database.select({id:semesterSubjects.subjectId}).from(semesterSubjects).where(eq(semesterSubjects.semesterId,settings.id))).map(row=>row.id),
     groups: await database
       .select()
       .from(groups)
       .where(
         admin
-          ? sql`true`
+          ? eq(groups.semesterId,settings.id)
           : inArray(
               groups.id,
               memberships.map((m) => m.groupId),
@@ -71,6 +76,7 @@ export async function loadData(user: User, admin = false) {
       );
       return {
         ...task,
+        subtasks:checklist.filter(item=>item.taskId===task.id).map(item=>({...item,done:checklistDone.some(done=>done.subtaskId===item.id && done.slot===(task.scope==="batch"?user.id:"shared"))})),
         creator: creator ?? "Deleted user",
         done: !!completion,
         completedAt: completion?.completedAt ?? null,
